@@ -16,30 +16,6 @@ export type DataLayerVariable = {
   required: boolean;
 };
 
-export type TriggerElement =
-  | 'button'
-  | 'link'
-  | 'banner'
-  | 'form'
-  | 'popup'
-  | 'menu'
-  | 'checkout'
-  | 'other';
-
-export type TechnicalSpec = {
-  triggerCondition: string;
-  triggerElement: TriggerElement | '';
-  triggerElementOther: string;
-  requiredVariables: DataLayerVariable[];
-  developmentNotes: string;
-  triggerElementLabel?: string;
-};
-
-export type QaItem = {
-  id: string;
-  label: string;
-};
-
 export type MeasurementEvent = {
   id: string;
   name: string;
@@ -56,7 +32,7 @@ export type MeasurementEvent = {
   customParams: CustomParam[];
   screenshotDataUrl?: string;
   howItTriggers: string;
-  technical: TechnicalSpec;
+  requiredVariables: DataLayerVariable[];
   createdAt: string;
   updatedAt: string;
 };
@@ -64,9 +40,8 @@ export type MeasurementEvent = {
 export type MeasurementGuide = {
   id: string;
   title: string;
-  client: string;
-  project: string;
-  qaChecklist: QaItem[];
+  brand: string;
+  country: string;
   events: MeasurementEvent[];
   createdAt: string;
   updatedAt: string;
@@ -74,16 +49,16 @@ export type MeasurementGuide = {
 
 export type LibraryEvent = MeasurementEvent & {
   signature: string;
-  client: string;
-  project: string;
+  brand: string;
+  country: string;
   script: string;
   author?: string;
 };
 
 export type LibraryFilters = {
   query: string;
-  client: string;
-  project: string;
+  brand: string;
+  country: string;
   structureType: EventStructureType | '';
 };
 
@@ -105,8 +80,8 @@ export type DocumentEventBlock = {
   interactionType: string;
   description: string;
   businessObjective: string;
-  client: string;
-  project: string;
+  brand: string;
+  country: string;
   screenshotDataUrl?: string;
   howItTriggers: string;
   event: string;
@@ -116,15 +91,14 @@ export type DocumentEventBlock = {
   eventLabel: string;
   customParams: CustomParam[];
   script: string;
-  technical: TechnicalSpec;
+  requiredVariables: DataLayerVariable[];
 };
 
 export type GuideDocument = {
   title: string;
-  client: string;
-  project: string;
+  brand: string;
+  country: string;
   generatedAt: string;
   index: DocumentIndexItem[];
-  qaChecklist: string[];
   events: DocumentEventBlock[];
 };

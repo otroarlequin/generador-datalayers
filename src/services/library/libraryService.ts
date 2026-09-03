@@ -10,6 +10,11 @@ import type {
 } from '@/types';
 import { createId, normalizeEvent, nowIso } from '@/utils/factory';
 
+type LegacyLibrary = LibraryEvent & {
+  client?: string;
+  project?: string;
+};
+
 function toLibraryEvent(
   event: MeasurementEvent,
   guide: MeasurementGuide,
@@ -21,8 +26,8 @@ function toLibraryEvent(
     ...normalized,
     id: existing?.id ?? createId(),
     signature: buildPayloadSignature(normalized),
-    client: guide.client.trim() || 'No client',
-    project: guide.project.trim() || 'No project',
+    brand: guide.brand.trim() || '—',
+    country: guide.country.trim() || '—',
     script: generateDataLayerScript(normalized),
     author: existing?.author,
     createdAt: existing?.createdAt ?? normalized.createdAt ?? timestamp,
@@ -30,18 +35,23 @@ function toLibraryEvent(
   };
 }
 
+function normalizeLibraryEvent(event: LegacyLibrary): LibraryEvent {
+  const normalized = normalizeEvent(event);
+  return {
+    ...normalized,
+    signature: event.signature,
+    brand: event.brand ?? event.client ?? '—',
+    country: event.country ?? event.project ?? '—',
+    script: event.script || generateDataLayerScript(normalized),
+    author: event.author,
+  };
+}
+
 export async function listLibraryEvents(): Promise<LibraryEvent[]> {
   const db = await getDb();
   const events = await db.getAll(LIBRARY_STORE);
   return events
-    .map((event) => ({
-      ...normalizeEvent(event),
-      signature: event.signature,
-      client: event.client,
-      project: event.project,
-      script: event.script,
-      author: event.author,
-    }))
+    .map((event) => normalizeLibraryEvent(event as LegacyLibrary))
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
@@ -51,14 +61,7 @@ export async function getLibraryEventById(
   const db = await getDb();
   const event = await db.get(LIBRARY_STORE, id);
   if (!event) return undefined;
-  return {
-    ...normalizeEvent(event),
-    signature: event.signature,
-    client: event.client,
-    project: event.project,
-    script: event.script,
-    author: event.author,
-  };
+  return normalizeLibraryEvent(event as LegacyLibrary);
 }
 
 export async function upsertLibraryEventFromGuide(
@@ -68,7 +71,11 @@ export async function upsertLibraryEventFromGuide(
   const db = await getDb();
   const signature = buildPayloadSignature(event);
   const existing = await db.getFromIndex(LIBRARY_STORE, 'by-signature', signature);
-  const next = toLibraryEvent(event, guide, existing);
+  const next = toLibraryEvent(
+    event,
+    guide,
+    existing ? normalizeLibraryEvent(existing as LegacyLibrary) : undefined,
+  );
   await db.put(LIBRARY_STORE, next);
   return next;
 }
@@ -101,8 +108,8 @@ export async function saveLibraryEvent(
   const next: LibraryEvent = {
     ...normalized,
     signature,
-    client: event.client,
-    project: event.project,
+    brand: event.brand,
+    country: event.country,
     script: generateDataLayerScript(normalized),
     author: event.author,
     updatedAt: nowIso(),
@@ -145,22 +152,16 @@ export async function duplicateLibraryEvent(
         ...param,
         id: createId(),
       })),
-      technical: {
-        triggerCondition: existing.technical.triggerCondition,
-        triggerElement: existing.technical.triggerElement,
-        triggerElementOther: existing.technical.triggerElementOther,
-        developmentNotes: existing.technical.developmentNotes,
-        requiredVariables: existing.technical.requiredVariables.map((variable) => ({
-          ...variable,
-          id: createId(),
-        })),
-      },
+      requiredVariables: existing.requiredVariables.map((variable) => ({
+        ...variable,
+        id: createId(),
+      })),
       createdAt: timestamp,
       updatedAt: timestamp,
     }),
     signature: '',
-    client: existing.client,
-    project: existing.project,
+    brand: existing.brand,
+    country: existing.country,
     script: '',
     author: existing.author,
   };
@@ -185,12 +186,12 @@ export function filterLibraryEvents(
   filters: LibraryFilters,
 ): LibraryEvent[] {
   const query = filters.query.trim().toLowerCase();
-  const client = filters.client.trim().toLowerCase();
-  const project = filters.project.trim().toLowerCase();
+  const brand = filters.brand.trim().toLowerCase();
+  const country = filters.country.trim().toLowerCase();
 
   return events.filter((event) => {
-    if (client && event.client.toLowerCase() !== client) return false;
-    if (project && event.project.toLowerCase() !== project) return false;
+    if (brand && event.brand.toLowerCase() !== brand) return false;
+    if (country && event.country.toLowerCase() !== country) return false;
     if (filters.structureType && event.structureType !== filters.structureType) {
       return false;
     }
@@ -204,8 +205,8 @@ export function filterLibraryEvents(
       event.eventCategory,
       event.eventAction,
       event.eventLabel,
-      event.client,
-      event.project,
+      event.brand,
+      event.country,
       event.howItTriggers,
       ...event.customParams.map((param) => `${param.key} ${param.value}`),
     ]

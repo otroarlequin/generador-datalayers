@@ -10,12 +10,19 @@ type GuidePreviewProps = {
   guide: MeasurementGuide;
 };
 
+function countryLabel(
+  code: string,
+  t: (key: string) => string,
+): string {
+  if (!code || code === '—') return '—';
+  const key = `country.${code}`;
+  const translated = t(key);
+  return translated === key ? code : translated;
+}
+
 export function GuidePreview({ guide }: GuidePreviewProps) {
-  const { t, locale } = useSettings();
-  const document = buildGuideDocument(guide, {
-    locale,
-    translate: t,
-  });
+  const { t } = useSettings();
+  const document = buildGuideDocument(guide);
 
   if (document.events.length === 0) {
     return (
@@ -30,14 +37,14 @@ export function GuidePreview({ guide }: GuidePreviewProps) {
     <article className="space-y-8 rounded-xl border border-border bg-surface-raised p-6 shadow-sm md:p-8">
       <header className="border-b border-border pb-6">
         <p className="text-xs font-semibold uppercase tracking-[0.14em] text-accent">
-          {t('preview.badge')}
+          {t('preview.documentLabel')}
         </p>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight text-ink">
           {document.title}
         </h1>
         <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-sm text-ink-muted">
-          <span>{t('preview.client')}: {document.client}</span>
-          <span>{t('preview.project')}: {document.project}</span>
+          <span>{t('preview.brand')}: {document.brand}</span>
+          <span>{t('preview.country')}: {countryLabel(document.country, t)}</span>
           <span>{t('preview.generated')}: {formatDate(document.generatedAt)}</span>
         </div>
       </header>
@@ -53,7 +60,6 @@ export function GuidePreview({ guide }: GuidePreviewProps) {
                 <th className="px-3 py-2">{t('preview.type')}</th>
                 <th className="px-3 py-2">event</th>
                 <th className="px-3 py-2">event_name</th>
-                <th className="px-3 py-2">{t('preview.tested')}</th>
               </tr>
             </thead>
             <tbody>
@@ -70,27 +76,11 @@ export function GuidePreview({ guide }: GuidePreviewProps) {
                   </td>
                   <td className="px-3 py-2 font-mono text-xs">{item.event}</td>
                   <td className="px-3 py-2 font-mono text-xs">{item.event_name}</td>
-                  <td className="px-3 py-2 text-ink-subtle">☐</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      </section>
-
-      <section className="border-t border-border pt-8">
-        <h2 className="text-lg font-semibold text-ink">{t('preview.qa')}</h2>
-        <p className="mt-2 text-sm text-ink-muted">{t('preview.qaIntro')}</p>
-        <ul className="mt-4 space-y-2">
-          {document.qaChecklist.map((item) => (
-            <li key={item} className="flex items-start gap-2 text-sm text-ink">
-              <span className="mt-0.5 inline-flex h-4 w-4 items-center justify-center rounded border border-border-strong text-[10px] text-ink-subtle">
-                ☐
-              </span>
-              <span>{item}</span>
-            </li>
-          ))}
-        </ul>
       </section>
 
       {document.events.map((event, index) => (
@@ -109,8 +99,8 @@ export function GuidePreview({ guide }: GuidePreviewProps) {
 
           <PreviewBlock title={t('preview.general')}>
             <MetaRow label={t('preview.interaction')} value={event.interactionType} />
-            <MetaRow label={t('preview.client')} value={event.client} />
-            <MetaRow label={t('preview.project')} value={event.project} />
+            <MetaRow label={t('preview.brand')} value={event.brand} />
+            <MetaRow label={t('preview.country')} value={countryLabel(event.country, t)} />
             <MetaRow label={t('preview.description')} value={event.description || '—'} />
             <MetaRow label={t('preview.objective')} value={event.businessObjective || '—'} />
           </PreviewBlock>
@@ -161,21 +151,9 @@ export function GuidePreview({ guide }: GuidePreviewProps) {
             <CodeBlock code={event.script} />
           </PreviewBlock>
 
-          <PreviewBlock title={t('preview.technical')}>
-            <MetaRow
-              label={t('event.triggerCondition')}
-              value={event.technical.triggerCondition || '—'}
-            />
-            <MetaRow
-              label={t('event.triggerElement')}
-              value={event.technical.triggerElementLabel || '—'}
-            />
-            <MetaRow
-              label={t('preview.devNotes')}
-              value={event.technical.developmentNotes || '—'}
-            />
-            {event.technical.requiredVariables.length > 0 ? (
-              <div className="mt-3 overflow-hidden rounded-lg border border-border">
+          {event.requiredVariables.length > 0 ? (
+            <PreviewBlock title={t('preview.dictionary')}>
+              <div className="overflow-hidden rounded-lg border border-border">
                 <table className="w-full text-left text-sm">
                   <thead className="bg-surface text-xs uppercase tracking-wide text-ink-subtle">
                     <tr>
@@ -186,7 +164,7 @@ export function GuidePreview({ guide }: GuidePreviewProps) {
                     </tr>
                   </thead>
                   <tbody>
-                    {event.technical.requiredVariables.map((variable) => (
+                    {event.requiredVariables.map((variable) => (
                       <tr key={variable.id} className="border-t border-border">
                         <td className="px-3 py-2 font-mono text-xs">{variable.name}</td>
                         <td className="px-3 py-2">{variable.description}</td>
@@ -199,8 +177,8 @@ export function GuidePreview({ guide }: GuidePreviewProps) {
                   </tbody>
                 </table>
               </div>
-            ) : null}
-          </PreviewBlock>
+            </PreviewBlock>
+          ) : null}
         </section>
       ))}
     </article>

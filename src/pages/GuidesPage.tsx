@@ -117,8 +117,8 @@ export function GuidesPage() {
               <thead className="border-b border-border bg-surface text-xs uppercase tracking-wide text-ink-subtle">
                 <tr>
                   <th className="px-4 py-3">{t('guides.col.title')}</th>
-                  <th className="px-4 py-3">{t('guides.col.client')}</th>
-                  <th className="px-4 py-3">{t('guides.col.project')}</th>
+                  <th className="px-4 py-3">{t('guides.col.brand')}</th>
+                  <th className="px-4 py-3">{t('guides.col.country')}</th>
                   <th className="px-4 py-3">{t('guides.col.events')}</th>
                   <th className="px-4 py-3">{t('guides.col.updated')}</th>
                   <th className="px-4 py-3">{t('guides.col.actions')}</th>
@@ -136,8 +136,14 @@ export function GuidesPage() {
                         {guide.title || t('guides.untitled')}
                       </button>
                     </td>
-                    <td className="px-4 py-3 text-ink-muted">{guide.client || '—'}</td>
-                    <td className="px-4 py-3 text-ink-muted">{guide.project || '—'}</td>
+                    <td className="px-4 py-3 text-ink-muted">{guide.brand || '—'}</td>
+                    <td className="px-4 py-3 text-ink-muted">
+                      {guide.country
+                        ? t(`country.${guide.country}`) === `country.${guide.country}`
+                          ? guide.country
+                          : t(`country.${guide.country}`)
+                        : '—'}
+                    </td>
                     <td className="px-4 py-3 text-ink-muted">{guide.events.length}</td>
                     <td className="px-4 py-3 text-ink-subtle">{formatDate(guide.updatedAt)}</td>
                     <td className="px-4 py-3">

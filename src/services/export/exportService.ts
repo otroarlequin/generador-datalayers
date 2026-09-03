@@ -33,10 +33,7 @@ export async function exportGuide(
     return { ok: false, errors, savedCount: 0 };
   }
 
-  const document = buildGuideDocument(guide, {
-    locale: options.locale,
-    translate: options.translate,
-  });
+  const document = buildGuideDocument(guide);
 
   if (format === 'html') {
     const { exportGuideToHtml } = await import('@/services/export/htmlExport');

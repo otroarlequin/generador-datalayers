@@ -20,8 +20,8 @@ export function LibraryPage() {
     setFilters,
     loading,
     error,
-    clients,
-    projects,
+    brands,
+    countries,
     remove,
     duplicate,
     update,
@@ -89,26 +89,26 @@ export function LibraryPage() {
               placeholder={t('library.searchPlaceholder')}
             />
             <SelectField
-              label={t('library.client')}
-              value={filters.client}
-              onChange={(e) => setFilters({ ...filters, client: e.target.value })}
+              label={t('library.brand')}
+              value={filters.brand}
+              onChange={(e) => setFilters({ ...filters, brand: e.target.value })}
             >
               <option value="">{t('library.all')}</option>
-              {clients.map((client) => (
-                <option key={client} value={client}>
-                  {client}
+              {brands.map((brand) => (
+                <option key={brand} value={brand}>
+                  {brand}
                 </option>
               ))}
             </SelectField>
             <SelectField
-              label={t('library.project')}
-              value={filters.project}
-              onChange={(e) => setFilters({ ...filters, project: e.target.value })}
+              label={t('library.country')}
+              value={filters.country}
+              onChange={(e) => setFilters({ ...filters, country: e.target.value })}
             >
               <option value="">{t('library.all')}</option>
-              {projects.map((project) => (
-                <option key={project} value={project}>
-                  {project}
+              {countries.map((country) => (
+                <option key={country} value={country}>
+                  {country.startsWith('country.') ? country : (t(`country.${country}`) === `country.${country}` ? country : t(`country.${country}`))}
                 </option>
               ))}
             </SelectField>
@@ -160,8 +160,8 @@ export function LibraryPage() {
                   <tr>
                     <th className="px-4 py-3">{t('library.col.event')}</th>
                     <th className="px-4 py-3">{t('library.col.type')}</th>
-                    <th className="px-4 py-3">{t('library.col.client')}</th>
-                    <th className="px-4 py-3">{t('library.col.project')}</th>
+                    <th className="px-4 py-3">{t('library.col.brand')}</th>
+                    <th className="px-4 py-3">{t('library.col.country')}</th>
                     <th className="px-4 py-3">{t('library.col.updated')}</th>
                   </tr>
                 </thead>
@@ -185,8 +185,8 @@ export function LibraryPage() {
                       <td className="px-4 py-3">
                         <StructureBadge type={event.structureType} />
                       </td>
-                      <td className="px-4 py-3 text-ink-muted">{event.client}</td>
-                      <td className="px-4 py-3 text-ink-muted">{event.project}</td>
+                      <td className="px-4 py-3 text-ink-muted">{event.brand}</td>
+                      <td className="px-4 py-3 text-ink-muted">{event.country}</td>
                       <td className="px-4 py-3 text-ink-subtle">
                         {formatDate(event.updatedAt)}
                       </td>
@@ -226,8 +226,8 @@ export function LibraryPage() {
               ) : null}
 
               <div className="space-y-1 text-sm">
-                <p><span className="text-ink-muted">{t('library.client')}:</span> {selected.client}</p>
-                <p><span className="text-ink-muted">{t('library.project')}:</span> {selected.project}</p>
+                <p><span className="text-ink-muted">{t('library.brand')}:</span> {selected.brand}</p>
+                <p><span className="text-ink-muted">{t('library.country')}:</span> {selected.country}</p>
                 <p><span className="text-ink-muted">{t('library.created')}:</span> {formatDate(selected.createdAt)}</p>
                 <p><span className="text-ink-muted">{t('library.updated')}:</span> {formatDate(selected.updatedAt)}</p>
                 <p className="font-mono text-xs text-ink-subtle">
@@ -269,14 +269,14 @@ export function LibraryPage() {
                 onChange={(e) => setEditing({ ...editing, name: e.target.value })}
               />
               <TextField
-                label={t('library.client')}
-                value={editing.client}
-                onChange={(e) => setEditing({ ...editing, client: e.target.value })}
+                label={t('library.brand')}
+                value={editing.brand}
+                onChange={(e) => setEditing({ ...editing, brand: e.target.value })}
               />
               <TextField
-                label={t('library.project')}
-                value={editing.project}
-                onChange={(e) => setEditing({ ...editing, project: e.target.value })}
+                label={t('library.country')}
+                value={editing.country}
+                onChange={(e) => setEditing({ ...editing, country: e.target.value })}
               />
               <TextField
                 label={t('event.event')}

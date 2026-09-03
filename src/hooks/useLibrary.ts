@@ -10,8 +10,8 @@ import type { LibraryEvent, LibraryFilters } from '@/types';
 
 const emptyFilters: LibraryFilters = {
   query: '',
-  client: '',
-  project: '',
+  brand: '',
+  country: '',
   structureType: '',
 };
 
@@ -43,13 +43,13 @@ export function useLibrary() {
     [events, filters],
   );
 
-  const clients = useMemo(
-    () => [...new Set(events.map((event) => event.client).filter(Boolean))].sort(),
+  const brands = useMemo(
+    () => [...new Set(events.map((event) => event.brand).filter(Boolean))].sort(),
     [events],
   );
 
-  const projects = useMemo(
-    () => [...new Set(events.map((event) => event.project).filter(Boolean))].sort(),
+  const countries = useMemo(
+    () => [...new Set(events.map((event) => event.country).filter(Boolean))].sort(),
     [events],
   );
 
@@ -76,8 +76,8 @@ export function useLibrary() {
     setFilters,
     loading,
     error,
-    clients,
-    projects,
+    brands,
+    countries,
     refresh,
     remove,
     duplicate,

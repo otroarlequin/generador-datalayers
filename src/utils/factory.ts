@@ -1,16 +1,12 @@
-import { v4 as uuidv4 } from 'uuid';
-import { createDefaultQaChecklist } from '@/constants';
 import type {
   CustomParam,
   DataLayerVariable,
   MeasurementEvent,
   MeasurementGuide,
-  QaItem,
-  TechnicalSpec,
 } from '@/types';
 
 export function createId(): string {
-  return uuidv4();
+  return crypto.randomUUID();
 }
 
 export function nowIso(): string {
@@ -41,22 +37,26 @@ export function createDataLayerVariable(
   };
 }
 
-export function createTechnicalSpec(
-  partial?: Partial<TechnicalSpec>,
-): TechnicalSpec {
-  return {
-    triggerCondition: '',
-    triggerElement: '',
-    triggerElementOther: '',
-    requiredVariables: [],
-    developmentNotes: '',
-    ...partial,
-  };
-}
+type LegacyTechnical = {
+  requiredVariables?: DataLayerVariable[];
+  triggerCondition?: string;
+  triggerElement?: string;
+  triggerElementOther?: string;
+  developmentNotes?: string;
+};
 
-export function normalizeEvent(raw: Partial<MeasurementEvent> & { id?: string }): MeasurementEvent {
+type LegacyEvent = Partial<MeasurementEvent> & {
+  id?: string;
+  technical?: LegacyTechnical;
+};
+
+export function normalizeEvent(raw: LegacyEvent): MeasurementEvent {
   const timestamp = nowIso();
-  const technical = raw.technical ?? createTechnicalSpec();
+  const requiredVariables =
+    raw.requiredVariables ??
+    raw.technical?.requiredVariables ??
+    [];
+
   return {
     id: raw.id ?? createId(),
     name: raw.name ?? '',
@@ -73,13 +73,7 @@ export function normalizeEvent(raw: Partial<MeasurementEvent> & { id?: string })
     customParams: raw.customParams ?? [],
     screenshotDataUrl: raw.screenshotDataUrl,
     howItTriggers: raw.howItTriggers ?? '',
-    technical: {
-      triggerCondition: technical.triggerCondition ?? '',
-      triggerElement: technical.triggerElement ?? '',
-      triggerElementOther: technical.triggerElementOther ?? '',
-      requiredVariables: technical.requiredVariables ?? [],
-      developmentNotes: technical.developmentNotes ?? '',
-    },
+    requiredVariables,
     createdAt: raw.createdAt ?? timestamp,
     updatedAt: raw.updatedAt ?? timestamp,
   };
@@ -90,46 +84,43 @@ export function createEmptyEvent(
 ): MeasurementEvent {
   return normalizeEvent({
     ...partial,
-    technical: createTechnicalSpec(partial?.technical),
   });
+}
+
+type LegacyGuide = Partial<MeasurementGuide> & {
+  id?: string;
+  client?: string;
+  project?: string;
+  qaChecklist?: unknown;
+};
+
+export function normalizeGuide(raw: LegacyGuide): MeasurementGuide {
+  const timestamp = nowIso();
+  return {
+    id: raw.id ?? createId(),
+    title: raw.title ?? 'New Measurement Guide',
+    brand: raw.brand ?? raw.client ?? '',
+    country: raw.country ?? raw.project ?? '',
+    events: (raw.events ?? []).map((event) => normalizeEvent(event)),
+    createdAt: raw.createdAt ?? timestamp,
+    updatedAt: raw.updatedAt ?? timestamp,
+  };
 }
 
 export function createEmptyGuide(
   partial?: Partial<MeasurementGuide>,
 ): MeasurementGuide {
   const timestamp = nowIso();
-  return {
+  return normalizeGuide({
     id: createId(),
     title: 'New Measurement Guide',
-    client: '',
-    project: '',
-    qaChecklist: createDefaultQaChecklist(),
+    brand: '',
+    country: '',
     events: [],
     createdAt: timestamp,
     updatedAt: timestamp,
     ...partial,
-  };
-}
-
-export function normalizeQaChecklist(items?: QaItem[]): QaItem[] {
-  if (!items || items.length === 0) return createDefaultQaChecklist();
-  return items.map((item) => ({
-    id: item.id ?? createId(),
-    label: item.label ?? '',
-  }));
-}
-
-export function normalizeGuide(raw: Partial<MeasurementGuide> & { id?: string }): MeasurementGuide {
-  const timestamp = nowIso();
-  return {
-    ...createEmptyGuide(),
-    ...raw,
-    id: raw.id ?? createId(),
-    qaChecklist: normalizeQaChecklist(raw.qaChecklist),
-    events: (raw.events ?? []).map((event) => normalizeEvent(event)),
-    createdAt: raw.createdAt ?? timestamp,
-    updatedAt: raw.updatedAt ?? timestamp,
-  };
+  });
 }
 
 export function cloneEventAsTemplate(
@@ -143,16 +134,10 @@ export function cloneEventAsTemplate(
       ...param,
       id: createId(),
     })),
-    technical: {
-      triggerCondition: event.technical.triggerCondition,
-      triggerElement: event.technical.triggerElement,
-      triggerElementOther: event.technical.triggerElementOther,
-      developmentNotes: event.technical.developmentNotes,
-      requiredVariables: event.technical.requiredVariables.map((variable) => ({
-        ...variable,
-        id: createId(),
-      })),
-    },
+    requiredVariables: event.requiredVariables.map((variable) => ({
+      ...variable,
+      id: createId(),
+    })),
     createdAt: timestamp,
     updatedAt: timestamp,
   });

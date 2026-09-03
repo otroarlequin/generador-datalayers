@@ -14,12 +14,8 @@ function escapeHtml(value: string): string {
 export function buildGuideHtml(
   guide: MeasurementGuide,
   labels: Record<string, string>,
-  options?: ExportOptions,
 ): string {
-  const document = buildGuideDocument(guide, {
-    locale: options?.locale,
-    translate: options?.translate,
-  });
+  const document = buildGuideDocument(guide);
 
   const eventSections = document.events
     .map((event, index) => {
@@ -42,8 +38,8 @@ export function buildGuideHtml(
         .join('');
 
       const variables =
-        event.technical.requiredVariables.length > 0
-          ? `<table><thead><tr><th>${labels.variable}</th><th>${labels.variableDescription}</th><th>${labels.example}</th><th>${labels.requiredVar}</th></tr></thead><tbody>${event.technical.requiredVariables
+        event.requiredVariables.length > 0
+          ? `<h3>${labels.dictionary}</h3><table><thead><tr><th>${labels.variable}</th><th>${labels.variableDescription}</th><th>${labels.example}</th><th>${labels.requiredVar}</th></tr></thead><tbody>${event.requiredVariables
               .map(
                 (variable) =>
                   `<tr><td>${escapeHtml(variable.name)}</td><td>${escapeHtml(variable.description)}</td><td>${escapeHtml(variable.example)}</td><td>${variable.required ? labels.yes : labels.no}</td></tr>`,
@@ -65,10 +61,6 @@ export function buildGuideHtml(
           <table>${dataRows}</table>
           <h3>${labels.script}</h3>
           <pre><code>${escapeHtml(event.script)}</code></pre>
-          <h3>${labels.technical}</h3>
-          <p><strong>${labels.triggerCondition}:</strong> ${escapeHtml(event.technical.triggerCondition || '—')}</p>
-          <p><strong>${labels.triggerElement}:</strong> ${escapeHtml(event.technical.triggerElementLabel || '—')}</p>
-          <p><strong>${labels.devNotes}:</strong> ${escapeHtml(event.technical.developmentNotes || '—')}</p>
           ${variables}
         </section>
       `;
@@ -78,12 +70,8 @@ export function buildGuideHtml(
   const indexRows = document.index
     .map(
       (item, index) =>
-        `<tr><td>${index + 1}</td><td><a href="#event-${item.id}">${escapeHtml(item.name)}</a></td><td>${escapeHtml(item.structureType)}</td><td>${escapeHtml(item.event)}</td><td>${escapeHtml(item.event_name)}</td><td>☐</td></tr>`,
+        `<tr><td>${index + 1}</td><td><a href="#event-${item.id}">${escapeHtml(item.name)}</a></td><td>${escapeHtml(item.structureType)}</td><td>${escapeHtml(item.event)}</td><td>${escapeHtml(item.event_name)}</td></tr>`,
     )
-    .join('');
-
-  const qaItems = document.qaChecklist
-    .map((item) => `<li>☐ ${escapeHtml(item)}</li>`)
     .join('');
 
   return `<!DOCTYPE html>
@@ -108,18 +96,14 @@ export function buildGuideHtml(
   <header>
     <p class="meta">Measurement Guide</p>
     <h1>${escapeHtml(document.title)}</h1>
-    <p class="meta"><strong>${labels.client}:</strong> ${escapeHtml(document.client)} · <strong>${labels.project}:</strong> ${escapeHtml(document.project)} · <strong>${labels.generated}:</strong> ${escapeHtml(document.generatedAt)}</p>
+    <p class="meta"><strong>${labels.brand}:</strong> ${escapeHtml(document.brand)} · <strong>${labels.country}:</strong> ${escapeHtml(document.country)} · <strong>${labels.generated}:</strong> ${escapeHtml(document.generatedAt)}</p>
   </header>
   <section>
     <h2>${labels.index}</h2>
     <table>
-      <thead><tr><th>#</th><th>${labels.name}</th><th>${labels.type}</th><th>event</th><th>event_name</th><th>${labels.tested}</th></tr></thead>
+      <thead><tr><th>#</th><th>${labels.name}</th><th>${labels.type}</th><th>event</th><th>event_name</th></tr></thead>
       <tbody>${indexRows}</tbody>
     </table>
-  </section>
-  <section>
-    <h2>${labels.qa}</h2>
-    <ul>${qaItems}</ul>
   </section>
   ${eventSections}
 </body>
@@ -129,26 +113,10 @@ export function buildGuideHtml(
 export function exportGuideToHtml(
   guide: MeasurementGuide,
   labels: Record<string, string>,
-  options?: ExportOptions,
+  _options?: ExportOptions,
 ): void {
-  const document = buildGuideDocument(guide, {
-    locale: options?.locale,
-    translate: options?.translate,
-  });
-  const html = buildGuideHtml(guide, labels, options);
+  const document = buildGuideDocument(guide);
+  const html = buildGuideHtml(guide, labels);
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   downloadBlob(blob, `${slugify(document.title)}.html`);
-}
-
-export function printGuideAsPdf(
-  guide: MeasurementGuide,
-  labels: Record<string, string>,
-): void {
-  const html = buildGuideHtml(guide, labels);
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) return;
-  printWindow.document.write(html);
-  printWindow.document.close();
-  printWindow.focus();
-  printWindow.print();
 }

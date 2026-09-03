@@ -38,7 +38,7 @@ export function generateDataLayerScript(
   });
 
   if (includeDictionaryExamples) {
-    for (const variable of event.technical.requiredVariables) {
+    for (const variable of event.requiredVariables) {
       const name = variable.name.trim();
       if (!name) continue;
       if (lines.length > 0) {

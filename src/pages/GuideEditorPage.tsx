@@ -7,7 +7,6 @@ import { ExportBar } from '@/features/export/ExportBar';
 import { EventList } from '@/features/guide/EventList';
 import { GuideHeader } from '@/features/guide/GuideHeader';
 import { GuidePreview } from '@/features/guide/GuidePreview';
-import { QaChecklistEditor } from '@/features/guide/QaChecklistEditor';
 import { useGuide } from '@/hooks/useGuide';
 import type { MeasurementEvent } from '@/types';
 
@@ -85,29 +84,48 @@ export function GuideEditorPage() {
             : 'lg:grid lg:grid-cols-[280px_minmax(0,1fr)]'
         }`}
       >
-        <div className="border-b border-border bg-surface-raised xl:border-b-0 xl:border-r">
-          <EventList
-            events={guide.events}
-            selectedEventId={selectedEventId}
-            onSelect={setSelectedEventId}
-            onAdd={() => addEvent()}
-            onRemove={removeEvent}
-            onMove={moveEvent}
-          />
+        <div className="flex max-h-[50vh] flex-col overflow-hidden border-b border-border bg-surface-raised xl:max-h-none xl:border-b-0 xl:border-r">
+          <div id="guide-start" className="shrink-0 border-b border-border p-3">
+            <GuideHeader
+              key={
+                guide.events.length > 0 && Boolean(guide.brand.trim() && guide.country.trim())
+                  ? 'guide-collapsed'
+                  : 'guide-open'
+              }
+              guide={guide}
+              onChange={updateGuide}
+              collapsed={
+                guide.events.length > 0 &&
+                Boolean(guide.brand.trim() && guide.country.trim())
+              }
+            />
+          </div>
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <EventList
+              events={guide.events}
+              selectedEventId={selectedEventId}
+              onSelect={setSelectedEventId}
+              onAdd={() => addEvent()}
+              onRemove={removeEvent}
+              onMove={moveEvent}
+            />
+          </div>
         </div>
 
         <div className="overflow-y-auto border-b border-border p-6 xl:border-b-0 xl:border-r">
           <div className="mx-auto max-w-4xl space-y-6">
-            <GuideHeader guide={guide} onChange={updateGuide} />
-            <QaChecklistEditor
-              guide={guide}
-              onChange={(qaChecklist) => updateGuide({ qaChecklist })}
-            />
             {selectedEvent ? (
               <EventForm
                 event={selectedEvent}
                 guide={guide}
                 onChange={(patch) => updateEvent(selectedEvent.id, patch)}
+                onBackToStart={() => {
+                  setSelectedEventId(null);
+                  document.getElementById('guide-start')?.scrollIntoView({
+                    behavior: 'smooth',
+                    block: 'start',
+                  });
+                }}
               />
             ) : (
               <div className="rounded-xl border border-dashed border-border-strong bg-surface px-6 py-16 text-center">
@@ -122,8 +140,19 @@ export function GuideEditorPage() {
         </div>
 
         {showPreview ? (
-          <div className="overflow-y-auto bg-surface p-4">
-            <GuidePreview guide={guide} />
+          <div className="flex flex-col overflow-hidden bg-surface">
+            <div className="shrink-0 border-b border-border bg-surface-raised px-4 py-3">
+              <p className="text-xs font-semibold uppercase tracking-[0.12em] text-accent">
+                {t('preview.panelBadge')}
+              </p>
+              <h3 className="mt-1 text-sm font-semibold text-ink">
+                {t('preview.panelTitle')}
+              </h3>
+              <p className="mt-1 text-xs text-ink-muted">{t('preview.panelHint')}</p>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto p-4">
+              <GuidePreview guide={guide} />
+            </div>
           </div>
         ) : null}
       </div>

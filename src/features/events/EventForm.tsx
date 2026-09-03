@@ -3,7 +3,6 @@ import {
   INTERACTION_TYPE_OPTIONS,
   PRIORITY_OPTIONS,
   STRUCTURE_TYPE_OPTIONS,
-  TRIGGER_ELEMENT_OPTIONS,
 } from '@/constants';
 import { Button } from '@/components/ui/Button';
 import { CodeBlock } from '@/components/ui/CodeBlock';
@@ -23,9 +22,10 @@ type EventFormProps = {
   event: MeasurementEvent;
   guide: MeasurementGuide;
   onChange: (patch: Partial<MeasurementEvent>) => void;
+  onBackToStart?: () => void;
 };
 
-export function EventForm({ event, guide, onChange }: EventFormProps) {
+export function EventForm({ event, guide, onChange, onBackToStart }: EventFormProps) {
   const t = useT();
   const script = generateDataLayerScript(event);
   const [libraryStatus, setLibraryStatus] = useState<string | null>(null);
@@ -61,6 +61,23 @@ export function EventForm({ event, guide, onChange }: EventFormProps) {
     } finally {
       setSaving(false);
     }
+  }
+
+  function structureHelpKey(type: EventStructureType): string {
+    if (type === 'ua') return 'event.structureHelp.ua';
+    if (type === 'ni') return 'event.structureHelp.ni';
+    return 'event.structureHelp.custom';
+  }
+
+  function updateVariable(
+    variableId: string,
+    patch: Partial<MeasurementEvent['requiredVariables'][number]>,
+  ) {
+    onChange({
+      requiredVariables: event.requiredVariables.map((item) =>
+        item.id === variableId ? { ...item, ...patch } : item,
+      ),
+    });
   }
 
   return (
@@ -156,6 +173,13 @@ export function EventForm({ event, guide, onChange }: EventFormProps) {
                 : t('event.eventFixedHint')
             }
           />
+        </div>
+
+        <div className="mt-3 rounded-lg border border-border bg-surface px-3 py-3 text-sm text-ink-muted">
+          {t(structureHelpKey(event.structureType))}
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-2">
           <TextField
             label={t('event.eventName')}
             required
@@ -290,94 +314,33 @@ export function EventForm({ event, guide, onChange }: EventFormProps) {
         <CodeBlock code={script} />
       </SectionCard>
 
-      <SectionCard title={t('event.technical')} description={t('event.technicalDesc')}>
-        <TextAreaField
-          label={t('event.triggerCondition')}
-          value={event.technical.triggerCondition}
-          onChange={(e) =>
-            onChange({
-              technical: { ...event.technical, triggerCondition: e.target.value },
-            })
-          }
-          placeholder={t('event.triggerConditionPlaceholder')}
-        />
-        <div className="mt-4 grid gap-4 md:grid-cols-2">
-          <SelectField
-            label={t('event.triggerElement')}
-            value={event.technical.triggerElement}
-            onChange={(e) =>
-              onChange({
-                technical: {
-                  ...event.technical,
-                  triggerElement: e.target.value as typeof event.technical.triggerElement,
-                },
-              })
-            }
-          >
-            <option value="">{t('event.triggerElementEmpty')}</option>
-            {TRIGGER_ELEMENT_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {t(option.labelKey)}
-              </option>
-            ))}
-          </SelectField>
-          {event.technical.triggerElement === 'other' ? (
-            <TextField
-              label={t('event.triggerElementOther')}
-              value={event.technical.triggerElementOther}
-              onChange={(e) =>
-                onChange({
-                  technical: {
-                    ...event.technical,
-                    triggerElementOther: e.target.value,
-                  },
-                })
-              }
-            />
-          ) : null}
-        </div>
-        <TextAreaField
-          label={t('event.devNotes')}
-          className="mt-4"
-          value={event.technical.developmentNotes}
-          onChange={(e) =>
-            onChange({
-              technical: { ...event.technical, developmentNotes: e.target.value },
-            })
-          }
-          placeholder={t('event.devNotesPlaceholder')}
-        />
-      </SectionCard>
-
       <SectionCard
         title={t('event.dictionary')}
         description={t('event.dictionaryDesc')}
         optional
-        collapsible
-        defaultOpen={false}
         action={
           <Button
-            onClick={() =>
+            type="button"
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
               onChange({
-                technical: {
-                  ...event.technical,
-                  requiredVariables: [
-                    ...event.technical.requiredVariables,
-                    createDataLayerVariable(),
-                  ],
-                },
-              })
-            }
+                requiredVariables: [
+                  ...event.requiredVariables,
+                  createDataLayerVariable(),
+                ],
+              });
+            }}
           >
             {t('event.addVariable')}
           </Button>
         }
       >
-        {event.technical.requiredVariables.length === 0 ? (
+        {event.requiredVariables.length === 0 ? (
           <p className="text-sm text-ink-subtle">{t('event.dictionaryEmpty')}</p>
         ) : (
           <div className="space-y-3">
-            {event.technical.requiredVariables.map((variable) => (
+            {event.requiredVariables.map((variable) => (
               <div
                 key={variable.id}
                 className="grid gap-2 rounded-lg border border-border p-3 md:grid-cols-[1fr_1.4fr_1fr_auto_auto]"
@@ -385,65 +348,27 @@ export function EventForm({ event, guide, onChange }: EventFormProps) {
                 <TextField
                   label={t('event.variable')}
                   value={variable.name}
-                  onChange={(e) =>
-                    onChange({
-                      technical: {
-                        ...event.technical,
-                        requiredVariables: event.technical.requiredVariables.map((item) =>
-                          item.id === variable.id
-                            ? { ...item, name: e.target.value }
-                            : item,
-                        ),
-                      },
-                    })
-                  }
+                  onChange={(e) => updateVariable(variable.id, { name: e.target.value })}
                 />
                 <TextField
                   label={t('event.variableDescription')}
                   value={variable.description}
                   onChange={(e) =>
-                    onChange({
-                      technical: {
-                        ...event.technical,
-                        requiredVariables: event.technical.requiredVariables.map((item) =>
-                          item.id === variable.id
-                            ? { ...item, description: e.target.value }
-                            : item,
-                        ),
-                      },
-                    })
+                    updateVariable(variable.id, { description: e.target.value })
                   }
                 />
                 <TextField
                   label={t('event.example')}
                   value={variable.example}
                   onChange={(e) =>
-                    onChange({
-                      technical: {
-                        ...event.technical,
-                        requiredVariables: event.technical.requiredVariables.map((item) =>
-                          item.id === variable.id
-                            ? { ...item, example: e.target.value }
-                            : item,
-                        ),
-                      },
-                    })
+                    updateVariable(variable.id, { example: e.target.value })
                   }
                 />
                 <SelectField
                   label={t('event.requiredVar')}
                   value={variable.required ? 'yes' : 'no'}
                   onChange={(e) =>
-                    onChange({
-                      technical: {
-                        ...event.technical,
-                        requiredVariables: event.technical.requiredVariables.map((item) =>
-                          item.id === variable.id
-                            ? { ...item, required: e.target.value === 'yes' }
-                            : item,
-                        ),
-                      },
-                    })
+                    updateVariable(variable.id, { required: e.target.value === 'yes' })
                   }
                 >
                   <option value="yes">{t('event.yes')}</option>
@@ -454,12 +379,9 @@ export function EventForm({ event, guide, onChange }: EventFormProps) {
                     variant="danger"
                     onClick={() =>
                       onChange({
-                        technical: {
-                          ...event.technical,
-                          requiredVariables: event.technical.requiredVariables.filter(
-                            (item) => item.id !== variable.id,
-                          ),
-                        },
+                        requiredVariables: event.requiredVariables.filter(
+                          (item) => item.id !== variable.id,
+                        ),
                       })
                     }
                   >
@@ -471,6 +393,15 @@ export function EventForm({ event, guide, onChange }: EventFormProps) {
           </div>
         )}
       </SectionCard>
+
+      {onBackToStart ? (
+        <div className="rounded-xl border border-dashed border-border bg-surface px-4 py-4">
+          <p className="text-sm text-ink-muted">{t('event.backToStartHint')}</p>
+          <Button className="mt-3" variant="primary" onClick={onBackToStart}>
+            {t('event.backToStart')}
+          </Button>
+        </div>
+      ) : null}
     </div>
   );
 }

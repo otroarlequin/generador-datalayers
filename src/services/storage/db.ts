@@ -13,8 +13,8 @@ interface MeasurementGuideDB extends DBSchema {
     value: LibraryEvent;
     indexes: {
       'by-signature': string;
-      'by-client': string;
-      'by-project': string;
+      'by-brand': string;
+      'by-country': string;
       'by-structureType': string;
       'by-updatedAt': string;
     };
@@ -23,8 +23,8 @@ interface MeasurementGuideDB extends DBSchema {
     key: string;
     value: MeasurementGuide;
     indexes: {
-      'by-client': string;
-      'by-project': string;
+      'by-brand': string;
+      'by-country': string;
       'by-updatedAt': string;
     };
   };
@@ -35,21 +35,37 @@ let dbPromise: Promise<IDBPDatabase<MeasurementGuideDB>> | null = null;
 export function getDb(): Promise<IDBPDatabase<MeasurementGuideDB>> {
   if (!dbPromise) {
     dbPromise = openDB<MeasurementGuideDB>(DB_NAME, DB_VERSION, {
-      upgrade(db, oldVersion) {
+      upgrade(db, oldVersion, _newVersion, transaction) {
         if (!db.objectStoreNames.contains(LIBRARY_STORE)) {
           const store = db.createObjectStore(LIBRARY_STORE, { keyPath: 'id' });
           store.createIndex('by-signature', 'signature', { unique: true });
-          store.createIndex('by-client', 'client');
-          store.createIndex('by-project', 'project');
+          store.createIndex('by-brand', 'brand');
+          store.createIndex('by-country', 'country');
           store.createIndex('by-structureType', 'structureType');
           store.createIndex('by-updatedAt', 'updatedAt');
+        } else if (oldVersion < 3) {
+          const store = transaction.objectStore(LIBRARY_STORE);
+          if (!store.indexNames.contains('by-brand')) {
+            store.createIndex('by-brand', 'brand');
+          }
+          if (!store.indexNames.contains('by-country')) {
+            store.createIndex('by-country', 'country');
+          }
         }
 
-        if (oldVersion < 2 && !db.objectStoreNames.contains(GUIDES_STORE)) {
+        if (!db.objectStoreNames.contains(GUIDES_STORE)) {
           const guides = db.createObjectStore(GUIDES_STORE, { keyPath: 'id' });
-          guides.createIndex('by-client', 'client');
-          guides.createIndex('by-project', 'project');
+          guides.createIndex('by-brand', 'brand');
+          guides.createIndex('by-country', 'country');
           guides.createIndex('by-updatedAt', 'updatedAt');
+        } else if (oldVersion < 3) {
+          const guides = transaction.objectStore(GUIDES_STORE);
+          if (!guides.indexNames.contains('by-brand')) {
+            guides.createIndex('by-brand', 'brand');
+          }
+          if (!guides.indexNames.contains('by-country')) {
+            guides.createIndex('by-country', 'country');
+          }
         }
       },
     });

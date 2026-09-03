@@ -21,14 +21,12 @@ export function ExportBar({ guide, onExported }: ExportBarProps) {
 
   const labels = useMemo(
     () => ({
-      client: t('preview.client'),
-      project: t('preview.project'),
+      brand: t('preview.brand'),
+      country: t('preview.country'),
       generated: t('preview.generated'),
       index: t('preview.index'),
       name: t('preview.name'),
       type: t('preview.type'),
-      tested: t('preview.tested'),
-      qa: t('preview.qa'),
       general: t('preview.general'),
       interaction: t('preview.interaction'),
       description: t('preview.description'),
@@ -37,10 +35,7 @@ export function ExportBar({ guide, onExported }: ExportBarProps) {
       how: t('preview.how'),
       data: t('preview.data'),
       script: t('preview.script'),
-      technical: t('preview.technical'),
-      triggerCondition: t('event.triggerCondition'),
-      triggerElement: t('event.triggerElement'),
-      devNotes: t('preview.devNotes'),
+      dictionary: t('preview.dictionary'),
       variable: t('event.variable'),
       variableDescription: t('event.variableDescription'),
       example: t('event.example'),

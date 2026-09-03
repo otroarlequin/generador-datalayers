@@ -6,12 +6,9 @@ import { downloadBlob, slugify } from '@/utils/helpers';
 export function exportGuideToMarkdown(
   guide: MeasurementGuide,
   labels: Record<string, string>,
-  options: ExportOptions,
+  _options: ExportOptions,
 ): void {
-  const document = buildGuideDocument(guide, {
-    locale: options.locale,
-    translate: options.translate,
-  });
+  const document = buildGuideDocument(guide);
   const markdown = buildGuideMarkdown(document, labels);
   const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
   downloadBlob(blob, `${slugify(document.title)}.md`);

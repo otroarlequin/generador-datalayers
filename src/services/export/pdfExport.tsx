@@ -70,24 +70,15 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   colIndex: { width: '8%' },
-  colName: { width: '28%' },
-  colType: { width: '14%' },
-  colEvent: { width: '20%' },
-  colEventName: { width: '20%' },
-  colTested: { width: '10%', textAlign: 'center' },
+  colName: { width: '32%' },
+  colType: { width: '16%' },
+  colEvent: { width: '22%' },
+  colEventName: { width: '22%' },
   screenshot: {
     marginTop: 6,
     maxWidth: 280,
     maxHeight: 160,
     objectFit: 'contain',
-  },
-  checklistItem: {
-    marginBottom: 4,
-  },
-  divider: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#e4e4e0',
-    marginVertical: 12,
   },
 });
 
@@ -96,8 +87,8 @@ function GuidePdfDocument({ document }: { document: GuideDocument }) {
     <Document>
       <Page size="A4" style={styles.page}>
         <Text style={styles.title}>{document.title}</Text>
-        <Text style={styles.subtitle}>Client: {document.client}</Text>
-        <Text style={styles.subtitle}>Project: {document.project}</Text>
+        <Text style={styles.subtitle}>Brand: {document.brand}</Text>
+        <Text style={styles.subtitle}>Country: {document.country}</Text>
         <Text style={styles.subtitle}>Generated: {document.generatedAt}</Text>
 
         <Text style={styles.sectionTitle}>Event Index</Text>
@@ -107,7 +98,6 @@ function GuidePdfDocument({ document }: { document: GuideDocument }) {
           <Text style={styles.colType}>Type</Text>
           <Text style={styles.colEvent}>event</Text>
           <Text style={styles.colEventName}>event_name</Text>
-          <Text style={styles.colTested}>Tested</Text>
         </View>
         {document.index.map((item, index) => (
           <View key={item.id} style={styles.tableRow}>
@@ -116,23 +106,8 @@ function GuidePdfDocument({ document }: { document: GuideDocument }) {
             <Text style={styles.colType}>{item.structureType}</Text>
             <Text style={styles.colEvent}>{item.event}</Text>
             <Text style={styles.colEventName}>{item.event_name}</Text>
-            <Text style={styles.colTested}>☐</Text>
           </View>
         ))}
-      </Page>
-
-      <Page size="A4" style={styles.page}>
-        <Text style={styles.title}>QA Checklist</Text>
-        <Text style={styles.subtitle}>
-          Use this checklist when validating the events in this measurement guide.
-        </Text>
-        <View style={{ marginTop: 12 }}>
-          {document.qaChecklist.map((item, index) => (
-            <Text key={item} style={styles.checklistItem}>
-              ☐  {index + 1}. {item}
-            </Text>
-          ))}
-        </View>
       </Page>
 
       {document.events.map((event, index) => (
@@ -146,8 +121,8 @@ function GuidePdfDocument({ document }: { document: GuideDocument }) {
             <Text>Type: {event.structureLabel}</Text>
             <Text>Priority: {event.priorityLabel}</Text>
             <Text>Interaction: {event.interactionType}</Text>
-            <Text>Client: {event.client}</Text>
-            <Text>Project: {event.project}</Text>
+            <Text>Brand: {event.brand}</Text>
+            <Text>Country: {event.country}</Text>
             <Text>Description: {event.description || '—'}</Text>
             <Text>Business objective: {event.businessObjective || '—'}</Text>
           </View>
@@ -183,21 +158,17 @@ function GuidePdfDocument({ document }: { document: GuideDocument }) {
             <Text style={styles.code}>{event.script}</Text>
           </View>
 
-          <View style={styles.block}>
-            <Text style={styles.label}>Technical specification</Text>
-            <Text>Development notes: {event.technical.developmentNotes || '—'}</Text>
-            {event.technical.requiredVariables.length > 0 ? (
-              <View>
-                <Text style={styles.label}>DataLayer dictionary</Text>
-                {event.technical.requiredVariables.map((variable) => (
-                  <Text key={variable.id}>
-                    {variable.name} — {variable.description} — eg: {variable.example} —{' '}
-                    {variable.required ? 'Required' : 'Optional'}
-                  </Text>
-                ))}
-              </View>
-            ) : null}
-          </View>
+          {event.requiredVariables.length > 0 ? (
+            <View style={styles.block}>
+              <Text style={styles.label}>DataLayer dictionary</Text>
+              {event.requiredVariables.map((variable) => (
+                <Text key={variable.id}>
+                  {variable.name} — {variable.description} — eg: {variable.example} —{' '}
+                  {variable.required ? 'Required' : 'Optional'}
+                </Text>
+              ))}
+            </View>
+          ) : null}
         </Page>
       ))}
     </Document>
